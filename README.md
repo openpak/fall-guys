@@ -1,19 +1,53 @@
 # fall-guys
 
-Replacement for the third-party network **Fall Guys** uses on Nintendo Switch.
+Feasibility study for replacing the network **Fall Guys** uses on Nintendo Switch.
 
-**Status: empty.** Nothing is implemented yet. This repository exists so the work has a
-home, a port block and a deploy path; treat every claim below as a plan, not a result.
+## Status: not feasible. Documentation only.
+
+There is no code here and none is planned. The full reasoning is in
+[`docs/design.md`](docs/design.md); the short version:
+
+Fall Guys on Switch is an Epic live service with three third-party backends —
+Epic Online Services for identity (`api.epicgames.dev`), Mediatonic's Catapult
+backend for login and matchmaking, and Epic-hosted **authoritative match servers
+that run the game simulation**. The first is a token Epic verifies with Nintendo,
+so an OpenPak identity can never satisfy it without us replacing EOS. The third
+is the wall: up to 60 players' physics, level state and round outcomes are
+computed on a server build that has never shipped to anyone, and Fall Guys has no
+client-hosted or listen-server mode. Replacing it means writing the game, not the
+network.
+
+That is unlike [`servers/outbound`](../outbound), where Photon Fusion's Shared
+mode puts the simulation inside the client and [`servers/photon`](../photon) can
+host the game's own `Simulation.Server`. No equivalent exists here.
+
+The service is also still live, so this is not a preservation case. Fall Guys
+breaks on an OpenPak console only because the console's identity is ours. The
+right handling in production is to **not** redirect `api.epicgames.dev` or
+`*.oncatapult.com` and let the title reach the real service.
+
+Consequences:
+
+- No port block is claimed in [`ports.md`](../../ports.md).
+- No deploy target, compose entry or status check.
+- [`docs/evidence-needed.md`](docs/evidence-needed.md) lists the experiments that
+  would confirm or overturn this, cheapest first. Only the first one (does the
+  Switch build contain a client-hosted match path?) can reopen the project.
+
+Reopen this repository if a server build becomes obtainable, if someone ships an
+open-source authoritative Fall Guys server under an AGPL-3.0-compatible licence,
+or if that first experiment finds a client-hosted path.
 
 ## Ground rules
 
-- Clean room. Read [`docs/clean-room-policy.md`](../../docs/clean-room-policy.md) before
-  writing a line. Public protocol documentation, our own captures, and compatibly licensed
-  code are the only inputs.
+- Clean room. Read [`docs/clean-room-policy.md`](../../docs/clean-room-policy.md)
+  before writing a line. Public protocol documentation, our own captures, and
+  compatibly licensed code are the only inputs. Provenance for this study is
+  recorded at the end of `docs/design.md`.
 - AGPL-3.0-only, English only, Go 1.25, no secrets in the repository.
-- Ports come from [`ports.md`](../../ports.md). Claim your block in the PR that first
-  needs it.
 
-This project is not affiliated with or endorsed by Nintendo, Fall Guys's publisher, or any
-original service provider. It contains no proprietary game code, assets, SDK material,
-binaries, certificates, keys, firmware, extracted files, credentials, or raw packet captures.
+This project is not affiliated with or endorsed by Nintendo, Mediatonic, Epic
+Games, or any original service provider. It contains no proprietary game code,
+assets, SDK material, binaries, certificates, keys, firmware, extracted files,
+credentials, or raw packet captures. Fall Guys is a trademark of Mediatonic
+Limited.
