@@ -169,7 +169,7 @@ as observed console behaviour and our own repositories:
   response. Redirect hooks for this title already exist there
   (`OPENPAK_FALLGUYS_EOS_IP`, `OPENPAK_FALLGUYS_EOS_PORT`,
   `OPENPAK_LOG_EOSSDK_BASE`).
-- **`Openpak/servers/shared-docs/online-compatibility-playbook.md`** for method.
+- **`Openpak/docs/playbooks/online-compatibility-playbook.md`** for method.
   Note that it cites a "Fall Guys/EOS" worked example whose handoff lives in a
   **source-available tree that must not be read**; it was not opened, and nothing
   in this document comes from it. If that prior work contains a contradicting
