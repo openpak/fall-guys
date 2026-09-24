@@ -1,5 +1,10 @@
 # fall-guys
 
+> **Superseded 2026-09-24 by [`servers/eos`](../eos).** The study below is carried there as
+> `docs/fall-guys.md` and `docs/fall-guys-evidence.md`. Its identity-layer verdict is
+> reversed in principle (OpenPak answers `api.epicgames.dev` itself); its match-server
+> verdict stands. Nothing here is maintained.
+
 Feasibility study for replacing the network **Fall Guys** uses on Nintendo Switch.
 
 ## Status: not feasible. Documentation only.
