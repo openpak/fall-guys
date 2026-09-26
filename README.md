@@ -45,7 +45,7 @@ or if that first experiment finds a client-hosted path.
 
 ## Ground rules
 
-- Clean room. Read [`docs/clean-room-policy.md`](../../docs/clean-room-policy.md)
+- Clean room. Read [`docs/clean-room-policy.md`](https://github.com/openpak/docs/blob/main/clean-room-policy.md)
   before writing a line. Public protocol documentation, our own captures, and
   compatibly licensed code are the only inputs. Provenance for this study is
   recorded at the end of `docs/design.md`.

@@ -158,7 +158,7 @@ Revisit only if one of these becomes true, and prefer the evidence in
 ## Provenance
 
 Public sources are linked inline. Two categories of non-public input were used,
-both permitted by [`clean-room-policy.md`](../../../docs/clean-room-policy.md)
+both permitted by [`clean-room-policy.md`](https://github.com/openpak/docs/blob/main/clean-room-policy.md)
 as observed console behaviour and our own repositories:
 
 - **`Openpak/emulators/citron`** (our own emulator tree, GPL-derived, readable
