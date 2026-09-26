@@ -4,7 +4,7 @@ The verdict in [`design.md`](design.md) is **not feasible**. This list is what
 would confirm or kill it, cheapest and most decisive first. Stop as soon as one
 experiment confirms the verdict — only E1 can overturn it outright.
 
-Read `docs/shared/online-compatibility-playbook.md` (layered model,
+Read `https://github.com/openpak/docs/blob/main/playbooks/online-compatibility-playbook.md` (layered model,
 experiment discipline) and `emulator-launch-protocol.md` before touching an
 emulator. Every rule there applies here, in particular:
 
