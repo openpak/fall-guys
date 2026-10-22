@@ -166,9 +166,8 @@ as observed console behaviour and our own repositories:
   bootstrap hostname is `api.epicgames.dev`; the EOS SDK is loaded at runtime as
   a separate module; and a note dated 2026-08-31 records that Fall Guys' EOS
   Connect external-auth exchange fails client-side regardless of the server's
-  response. Redirect hooks for this title already exist there
-  (`OPENPAK_FALLGUYS_EOS_IP`, `OPENPAK_FALLGUYS_EOS_PORT`,
-  `OPENPAK_LOG_EOSSDK_BASE`).
+  response. The per-title redirect env hooks there are not read by Harbor;
+  redirect `api.epicgames.dev` by exact host through the OpenPak DNS/hosts override.
 - **`Openpak/docs/playbooks/online-compatibility-playbook.md`** for method.
   Nothing in this document comes from earlier work on Fall Guys/EOS; if any of it
   contradicts a result here, the result will have to be re-derived by capture.

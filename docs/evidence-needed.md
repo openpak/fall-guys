@@ -14,11 +14,10 @@ emulator. Every rule there applies here, in particular:
   scratch only.
 - One citron instance per profile; its log truncates on every start.
 
-Tooling already present in `Openpak/emulators/citron`: exact-host DNS redirect
-`OPENPAK_FALLGUYS_EOS_IP` (+ `OPENPAK_FALLGUYS_EOS_PORT` to move the
-destination off 443), `OPENPAK_LOG_EOSSDK_BASE` for the runtime base of the
-`nn::ro`-loaded EOS SDK module, and `OPENPAK_BAAS_SUB` to pin the BAAS
-`id_token` subject. All default-off. Log:
+The earlier per-title env hooks (EOS host/port redirect, EOS SDK module base,
+BAAS `id_token` subject pin) lived in the retired Citron fork and nothing reads
+them any more. Redirect the EOS host by exact name through the OpenPak DNS/hosts
+override; SDK-relative offsets need the module base from a guest dump. Log:
 `~/.local/share/citron/log/citron_log.txt`.
 
 ---
@@ -56,13 +55,13 @@ verdict that E3/E5 already decide.
 
 ## E3 — Where exactly does EOS Connect abort?
 
-- **Method.** Point `OPENPAK_FALLGUYS_EOS_IP` at a local terminator that logs
+- **Method.** Redirect the EOS host to a local terminator that logs
   metadata only (TLS handshake parameters, request line, header names, byte
-  counts — never values), with `OPENPAK_FALLGUYS_EOS_PORT` if 443 is taken.
-  Run twice: once with the default random BAAS `sub`, once with
-  `OPENPAK_BAAS_SUB` pinned to the linked account's uid (the 2026-08-31
+  counts — never values), on another port if 443 is taken.
+  Run twice: once with the default random BAAS `sub`, once with the `sub`
+  pinned to the linked account's uid (the 2026-08-31
   hypothesis was a cross-check against `IManagerForApplication::GetAccountId`).
-  Use `OPENPAK_LOG_EOSSDK_BASE=1` to translate SDK-relative offsets if the
+  Translate SDK-relative offsets with the module base if the
   failure needs to be located in the module.
 - **Decision rule.** The client never sends the external-auth request →
   the gate is client-local and layer 1 requires patching a shipped third-party
