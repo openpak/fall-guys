@@ -1,7 +1,7 @@
 # Fall Guys on Nintendo Switch — network stack and feasibility
 
 Status: **research verdict, 2026-09-09. No implementation, and none planned.**
-Author: tobagin. Clean room: no earlier source was read for this document; see
+Author: tobagin. Clean room: no source from a non-free implementation was read for this document; see
 [Provenance](#provenance).
 
 ## Verdict
@@ -170,10 +170,8 @@ as observed console behaviour and our own repositories:
   (`OPENPAK_FALLGUYS_EOS_IP`, `OPENPAK_FALLGUYS_EOS_PORT`,
   `OPENPAK_LOG_EOSSDK_BASE`).
 - **`Openpak/docs/playbooks/online-compatibility-playbook.md`** for method.
-  Note that it cites a "Fall Guys/EOS" worked example whose handoff lives in a
-  **source-available tree that must not be read**; it was not opened, and nothing
-  in this document comes from it. If that prior work contains a contradicting
-  result, it will have to be re-derived by capture, not consulted.
+  Nothing in this document comes from earlier work on Fall Guys/EOS; if any of it
+  contradicts a result here, the result will have to be re-derived by capture.
 
 No proprietary binary, dump, capture, token or key is stored in this repository.
 
