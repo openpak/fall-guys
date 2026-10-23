@@ -137,7 +137,7 @@ either, short of the three layers above.
 
 Nothing is in scope. Specifically:
 
-- **No port block claimed** in [`ports.md`](../../../ports.md). The
+- **No port block claimed** in [`ports.md`](https://docs.openpak.org/contributors/ports/). The
   22600–22699 third-party range keeps its ten free for a title that can use them.
 - **No Go code.** A Catapult skeleton would be a login server for a game with no
   rounds; an EOS stub would be a stub the client refuses to talk to. Both would
@@ -166,7 +166,7 @@ Revisit only if one of these becomes true, and prefer the evidence in
 ## Provenance
 
 Public sources are linked inline. Two categories of non-public input were used,
-both permitted by [`clean-room-policy.md`](https://github.com/openpak/docs/blob/main/clean-room-policy.md)
+both permitted by [clean-room policy](https://docs.openpak.org/contributors/clean-room/)
 as observed console behaviour and our own repositories:
 
 - **`Openpak/emulators/citron`** (our own emulator tree, GPL-derived, readable
@@ -176,7 +176,7 @@ as observed console behaviour and our own repositories:
   Connect external-auth exchange fails client-side regardless of the server's
   response. The per-title redirect env hooks there are not read by Harbor;
   redirect `api.epicgames.dev` by exact host through the OpenPak DNS/hosts override.
-- **`Openpak/docs/playbooks/online-compatibility-playbook.md`** for method.
+- The [online compatibility guide](https://docs.openpak.org/contributors/online-compatibility/) for method.
   Nothing in this document comes from earlier work on Fall Guys/EOS; if any of it
   contradicts a result here, the result will have to be re-derived by capture.
 

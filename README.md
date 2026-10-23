@@ -33,7 +33,7 @@ right handling in production is to **not** redirect `api.epicgames.dev` or
 
 Consequences:
 
-- No port block is claimed in [`ports.md`](../../ports.md).
+- No port block is claimed in [`ports.md`](https://docs.openpak.org/contributors/ports/).
 - No deploy target, compose entry or status check.
 - [`docs/evidence-needed.md`](docs/evidence-needed.md) lists the experiments that
   would confirm or overturn this, cheapest first. Only the first one (does the
@@ -45,7 +45,7 @@ or if that first experiment finds a client-hosted path.
 
 ## Ground rules
 
-- Clean room. Read [`docs/clean-room-policy.md`](https://github.com/openpak/docs/blob/main/clean-room-policy.md)
+- Clean room. Read [clean-room policy](https://docs.openpak.org/contributors/clean-room/)
   before writing a line. Public protocol documentation, our own captures, and
   compatibly licensed code are the only inputs. Provenance for this study is
   recorded at the end of `docs/design.md`.
