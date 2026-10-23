@@ -1,5 +1,13 @@
 # Fall Guys on Nintendo Switch — network stack and feasibility
 
+> **Current Switch client (2026-10-13): Harbor**, at
+> `~/REPOS/Openpak/emulators/harbor`. Harbor is an independent
+> OpenPak project based on Eden. Citron, Ryujinx (desktop and Android), and
+> the former OpenPak Eden checkouts have been removed. References to those
+> forks below record historical evidence only: do not run their commands,
+> reinstall them, or select them for current work. Use Harbor's README and
+> current handoff for builds and testing; old results do not establish Harbor parity.
+
 Status: **research verdict, 2026-09-09. No implementation, and none planned.**
 Author: tobagin. Clean room: no source from a non-free implementation was read for this document; see
 [Provenance](#provenance).
