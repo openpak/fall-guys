@@ -74,16 +74,55 @@ into a generated codec, not into this document.
 
 catapultd serves the authored document at `/content/<version>`.
 
-## Match server
+## Round server
 
-UNet HLAPI messages over a Hazel transport. The game's own messages are:
+Plain UDP. The client never uses Hazel's DTLS: its transport passes `useDtls = false`.
 
-- From the server: `ConnectInitial`, `StartLoadingLevel`, `SpawnObject`, `UnspawnObject`,
-  `StartGame`, `ObjectTransform(Compact)`, `MotorAgentState`, `MotorTasks`, `PlayerProgress`,
-  `QualificationProgressUpdated`, `RoundResults`, `EndRound`, `ExecuteRPC`, `EventGeneric`,
-  and others.
-- From the client: `ConnectInitial`, `ReadyRound`, `SetReady`, `RequestSpawnPlayer`,
-  `MotorTasks`, `ObjectTransform`, `RequestGeneric`, `ResetToCheckpoint`, `SkipRound`,
-  `DisconnectPlayer`, `Ping`/`Pong`.
+### Hazel datagrams
 
-The client implements none of the server's round logic. See the README.
+Byte 0 is the type, then a 16-bit big-endian id:
+
+| type | layout | notes |
+|---|---|---|
+| 0 unreliable | `00 seq seq payload` | sequence number; older or repeated ones are dropped |
+| 1 reliable | `01 id id payload` | acknowledged, resent until acknowledged |
+| 8 hello | `08 00 01 00` | client to server; the ack of it is what connects the client |
+| 9 disconnect | `09 [reason]` | |
+| 10 ack | `0a id id mask` | bit k of mask also acknowledges id-1-k |
+| 12 ping | `0c id id` | every 1.5 s from the client; acknowledged like reliable data |
+| 13 welcome | `0d id id hazelId(u32 LE)` | server to client, reliable; gives the id a reconnect names |
+| 14 reconnect | `0e id id hazelId(u32 LE)` | client to server from a new address |
+
+Keep datagrams under 1200 bytes. The client stalls at 20 unacknowledged reliable packets.
+With the content setting `hazel_packet_sequencing` true, reliable packets carry another
+big-endian u16 sequence number after the header; OpenPak's document sets it false.
+
+### Messages
+
+A payload is a run of messages, each `[msgId u8][body]` with no length: a reader must
+consume exactly the body. Ids 1-47 are UNet HLAPI's own (Fragment = 17:
+`[17][0][u16 len][bytes]` per chunk, then `[17][1]`). The game's messages are
+`57 + EnumGameMessageType`. Primitives are HLAPI's: little-endian integers, floats as their
+bits, a string as a u16 byte length and UTF-8, HLAPI's packed uint32. Game messages add a
+"short string" (packed length and UTF-8), half-float vectors and a smallest-three quaternion.
+`internal/gamemsg` has every layout the round server uses.
+
+### One round
+
+```
+client  CONNECT_INITIAL (protocol version)  server  CONNECT_INITIAL (key)
+client  CONNECT_CLIENT (key proof, entry)   server  CONNECTED_CLIENT (0, player ids)
+                                            server  GAME_DATA_OPTIONS (CMS round id, scene),
+                                                    START_LOADING_LEVEL
+client  SET_READY 1, 2; REQUEST_SPAWN       server  SPAWN_OBJECT per player (authority to its
+                                                    owner), QueuedObjectsSpawned, AllPlayersSpawned
+client  SET_READY 3                         server  StartIntroCameras
+client  SET_READY 4, 5, 6                   server  START_GAME (countdown start, end time)
+client  MOTORTASKS, PING                    server  others' movement, PONG (server clock)
+                                            server  PLAYER_PROGRESS, QUALIFICATION_PROGRESS
+                                            server  ServerEndingRound, END_ROUND, ROUND_RESULTS
+```
+
+The server decides who qualifies: the finish trigger reports only on a game server. Each
+console has positional authority over its own character, so the server tests the positions
+the clients report against the level's finish volume. The server also picks start positions.
