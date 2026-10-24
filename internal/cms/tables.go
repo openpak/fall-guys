@@ -1,0 +1,47 @@
+package cms
+
+// tables lists every top-level key the client's CMS parser reads. Each parser fetches its key
+// with a plain dictionary lookup, so a missing key fails the whole document; a key whose value
+// is not an array (null) gives an empty table. Names come from the client's parser string
+// literals (docs/protocol.md, "Content").
+var tables = []string{
+	"achievements", "afk_utility", "asymmetric_team_game_rules", "audio_event_and_bank_pairs",
+	"badges", "challenge_background_schedules", "challenge_list_ui", "challenge_lists",
+	"challenge_rarity", "challenges", "cm_editor_values", "collectable_spawn",
+	"collectable_spawn_overrides", "collectable_types", "collision_types", "colour",
+	"connection_quality_manager", "connection_quality_settings", "cosmetics_emotes",
+	"cosmetics_emoticons", "cosmetics_nameplates", "cosmetics_nicknames", "cosmetics_phrases",
+	"cosmetics_punchlines", "costumes_colour_schemes", "costumes_evolving", "costumes_faceplates",
+	"costumes_lower", "costumes_monolithic", "costumes_patterns", "costumes_upper",
+	"credits_departments", "credits_strings", "credits_strings_departments",
+	"credits_strings_roles", "currencies", "customisable_image", "customiser_first_items",
+	"discovery_queries", "dlc_images", "dlc_levels", "dlc_levels_json", "elimination_screens",
+	"environment_live_events", "fall_feeds", "fraggle_colour_palette",
+	"fraggle_colour_palette_mapper", "fraggle_game_modes", "fraggle_items_budget",
+	"fraggle_items_budget_additional_costing", "fraggle_rejected_pairs", "fraggle_settings",
+	"game_rules", "gameplay_values", "goals", "iaps", "level_tag_weightings", "level_tags",
+	"levels_archetype", "levels_audio_ambiences", "levels_audio_stingers", "levels_director",
+	"levels_episode", "levels_round", "levels_roundpool", "levels_roundpool_collections",
+	"levels_soundtracks", "levels_themes", "levels_variation", "levels_variation_adjustments",
+	"levels_variation_difficulties", "levels_variation_overrides", "live_events", "lives_systems",
+	"loading_screen_tips", "localised_strings", "main_menu_background", "main_menu_screen_data",
+	"matchmaking_buckets", "matchmaking_gates", "matchmaking_schedules", "newsfeed",
+	"per_platform_texture_settings", "player_actions", "player_complaint_categories",
+	"player_complaints", "player_initial_loadout", "player_levels", "player_stats",
+	"prime_levels", "private_lobbies_shows", "private_lobbies_shows_tabs", "rank_lists",
+	"rank_scorings", "ranking_cycle_chainkeys", "ranking_cycle_instances", "ranking_cycles",
+	"ranks", "rarities", "reporting_tool_settings", "requirements", "rewards", "schedule_items",
+	"season_pass_confirmation_popup", "season_pass_tier_skip_button",
+	"season_pass_tier_skip_confirmation_popup", "season_pass_upgrade_button",
+	"season_pass_upsell_popup", "season_passes", "seasons", "settings_analytics",
+	"settings_audio", "settings_autodetect", "settings_character_modifiers", "settings_discovery",
+	"settings_economy", "settings_economy_boost_schedules", "settings_environment",
+	"settings_episode_rewards", "settings_fall_feed", "settings_global", "settings_localisation",
+	"settings_matchmaking_multiplay_profiles", "settings_matchmaking_multiplay_regions",
+	"settings_show_selector", "settings_store", "show_entry_point", "show_schedule_tags",
+	"show_selector_pills", "show_selector_sections", "show_selector_tab_settings", "show_tags",
+	"shows", "shows_fallback", "shows_selector_tab", "store_bundles", "sym_store_bundles",
+	"sym_store_sections", "sym_storefronts", "sym_stores", "target_conditions", "targets",
+	"targets_targeted_items", "terms_of_service", "timeattack_spawns", "toms_customisation_pools",
+	"toms_padding_rules", "tutorials", "ugc_tags", "urls", "welcome_slides",
+}

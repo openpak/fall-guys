@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"openpak/fall-guys/internal/catapult"
+	"openpak/fall-guys/internal/cms"
 )
 
 func main() {
@@ -24,8 +25,8 @@ func main() {
 	s := &server{
 		keys:       newKeySet(envOr("EOSD_JWKS_URL", "http://127.0.0.1:22620/auth/v1/oauth/jwks")),
 		secret:     []byte(os.Getenv("CATAPULT_SECRET")),
-		contentURL: os.Getenv("CATAPULT_CONTENT_URL"),
-		contentVer: envOr("CATAPULT_CONTENT_VERSION", "openpak-0"),
+		contentURL: envOr("CATAPULT_CONTENT_URL", "https://login.fallguys.oncatapult.com"+contentPath+cms.Version()),
+		contentVer: envOr("CATAPULT_CONTENT_VERSION", cms.Version()),
 	}
 	var err error
 	if s.schema, err = catapult.LoadSchema(); err != nil {
@@ -45,6 +46,7 @@ func main() {
 	}
 	h := http.NewServeMux()
 	h.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })
+	h.HandleFunc(contentPath, serveContent)
 	h.Handle("/", s)
 	srv := &http.Server{Addr: addr, Handler: h, ReadHeaderTimeout: 10 * time.Second}
 	log.Printf("[catapult] listening on %s", addr)

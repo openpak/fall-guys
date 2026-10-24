@@ -49,6 +49,31 @@ DateTimeOverride, UserSession). Incoming batches arrive as `Result<MessageBatch>
 The subtype numbers and DTO field tags are tabulated in the private research notes. They go
 into a generated codec, not into this document.
 
+## Content (CMS)
+
+- The login answer names the document (`contentUrl`) and its version (`contentVersion`). The
+  client fetches the URL with a plain GET and `Accept-Encoding: gzip`. It gunzips the body
+  itself, and only when the answer carries `Content-Encoding: gzip`. It then reads the body as
+  UTF-8 JSON.
+- On disk it caches the document as `content_v2/<version>.gdata`, XORed with a key the client
+  holds. The XOR applies to the cache only, never to the wire. A new version replaces the
+  cached copy.
+- Document: one JSON object. `_meta._content_version` must be set. There is one key per table,
+  151 tables in 11.6.1 (`internal/cms/tables.go`). Each table is an array of rows, and every
+  row has a string `id`.
+- **Every table key must be present.** The parser looks each one up directly, so a missing key
+  fails the whole document. A `null` or an empty array gives an empty table.
+- A field that refers to another row holds that row's id. A `table.id` form also works,
+  because the client keeps what follows the first dot. Nested structures are objects.
+- Enums are written as member names, matched without regard to case or `_`. Dates are ISO 8601
+  strings or epoch seconds. Integers must be JSON integers, and booleans JSON booleans.
+- `settings_global` rows are `{id, value}`. The ids are fixed by the client (for example
+  `hazel_packet_sequencing`, default `true`, and `hazel_disconnect_timeout`).
+- Round scenes are addressable keys shipped in the build (for example `FallGuy_DoorDash`),
+  named by `prime_levels.scene_name`.
+
+catapultd serves the authored document at `/content/<version>`.
+
 ## Match server
 
 UNet HLAPI messages over a Hazel transport. The game's own messages are:
