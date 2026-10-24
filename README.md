@@ -12,10 +12,10 @@ and tested on its own.
 
 | Piece | Code | State |
 |---|---|---|
-| EOS sign-in, EOS Auth (Epic account) | [`../eos`](../eos) | written, not yet tested with Fall Guys |
-| Catapult login | `cmd/catapultd` | written |
+| EOS sign-in, EOS Auth (Epic account) | [`../eos`](../eos) | works on Harbor |
+| Catapult login (privacy policy, EULA, login) | `cmd/catapultd` | works on Harbor |
 | Gateway (profile, wallet, settings, matchmaking token) | `cmd/catapultd` | written; more handlers follow the client's requests |
-| Content document (one show, one round) | `internal/cms` | authored, not yet parsed by a client |
+| Content document (one show, one round) | `internal/cms` | authored; served over plain http (the downloader rejects the OpenPak CA), route pending |
 | Matchmaking socket and match status | `cmd/catapultd` | written |
 | Round server transport (Hazel, HLAPI framing) | `internal/hazel`, `internal/hlapi` | written, unit tested |
 | Round server flow (connect, load, spawn, start, end) | `internal/round`, `cmd/roundd` | written, unit tested |
