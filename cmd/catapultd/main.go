@@ -14,6 +14,8 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"openpak/fall-guys/internal/catapult"
 )
 
 func main() {
@@ -24,6 +26,14 @@ func main() {
 		contentURL: os.Getenv("CATAPULT_CONTENT_URL"),
 		contentVer: envOr("CATAPULT_CONTENT_VERSION", "openpak-0"),
 	}
+	var err error
+	if s.schema, err = catapult.LoadSchema(); err != nil {
+		log.Fatalf("schema: %v", err)
+	}
+	if s.replies, err = catapult.Replies(); err != nil {
+		log.Fatalf("rpc table: %v", err)
+	}
+	s.handlers = gatewayHandlers()
 	if len(s.secret) == 0 {
 		log.Fatal("CATAPULT_SECRET is required (signs session tokens)")
 	}

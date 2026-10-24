@@ -5,6 +5,7 @@ package main
 
 import (
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/hex"
@@ -16,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"openpak/fall-guys/internal/catapult"
 )
 
 const sessionTTL = 12 * time.Hour
@@ -25,6 +28,9 @@ type server struct {
 	secret     []byte
 	contentURL string
 	contentVer string
+	schema     *catapult.Schema
+	replies    map[string]string
+	handlers   map[string]handler
 }
 
 type loginRequest struct {
@@ -71,6 +77,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodPost && r.URL.Path == "/api/v1/login":
 		s.login(w, r)
+	case r.URL.Path == "/ws":
+		s.gateway(w, r)
 	default:
 		s.unhandled(w, r)
 	}
@@ -133,6 +141,32 @@ func (s *server) sessionToken(account string, exp time.Time) string {
 	m := hmac.New(sha256.New, s.secret)
 	m.Write([]byte("session\x00" + body))
 	return body + "." + base64.RawURLEncoding.EncodeToString(m.Sum(nil))
+}
+
+// checkSession verifies a token sessionToken minted and returns its account id.
+func (s *server) checkSession(tok string) (string, bool) {
+	i := strings.LastIndexByte(tok, '.')
+	if i < 0 {
+		return "", false
+	}
+	body := tok[:i]
+	m := hmac.New(sha256.New, s.secret)
+	m.Write([]byte("session\x00" + body))
+	if !hmac.Equal([]byte(base64.RawURLEncoding.EncodeToString(m.Sum(nil))), []byte(tok[i+1:])) {
+		return "", false
+	}
+	account, exp, ok := strings.Cut(body, ".")
+	n, err := strconv.ParseInt(exp, 10, 64)
+	if !ok || err != nil || time.Now().Unix() > n {
+		return "", false
+	}
+	return account, true
+}
+
+func randomHex(n int) string {
+	b := make([]byte, n/2)
+	_, _ = rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 func (s *server) unhandled(w http.ResponseWriter, r *http.Request) {
