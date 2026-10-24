@@ -70,9 +70,11 @@ func (g *gwSession) handle(p []byte) {
 	replyType, known := g.s.replies[name]
 	h, ok := g.s.handlers[name]
 	if !ok {
-		log.Printf("[gateway] !! unhandled request %s keys=%s reply=%s", name, keys(body), short(replyType))
+		// Unknown to us: answer with an empty reply of the right type, which reads as "nothing
+		// here" (empty lists, zero counts), and log it as the next handler to write.
+		log.Printf("[gateway] !! unhandled request %s keys=%s reply=%s (sent empty)", name, keys(body), short(replyType))
 		if known && replyType != "" {
-			g.sendError(reqID, replyType, 501, "NotImplemented")
+			g.send(catapult.ResultOf(replyType), reqID, catapult.OpReply, map[string]any{})
 		}
 		return
 	}
