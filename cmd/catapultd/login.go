@@ -54,18 +54,23 @@ type identity struct {
 }
 
 type loginResponse struct {
-	Token                string         `json:"token"`
-	Expiry               string         `json:"expiry"`
-	AccountID            string         `json:"accountId"`
-	Identities           []identity     `json:"identities"`
-	Roles                []string       `json:"roles"`
-	ContentURL           string         `json:"contentUrl"`
-	ContentVersion       string         `json:"contentVersion"`
-	ContentETag          string         `json:"contentEtag"`
-	AdditionalProperties map[string]any `json:"additionalProperties"`
-	TokenType            string         `json:"tokenType"`
-	ClientFeatures       []string       `json:"clientFeatures"`
-	SocialBans           []any          `json:"socialBans"`
+	Token                string            `json:"token"`
+	Expiry               string            `json:"expiry"`
+	AccountID            string            `json:"accountId"`
+	Identities           map[string]string `json:"identities"` // identity type -> id
+	Roles                []string          `json:"roles"`
+	ContentURL           string            `json:"contentUrl"`
+	ContentVersion       string            `json:"contentVersion"`
+	ContentETag          string            `json:"contentEtag"`
+	AdditionalProperties map[string]string `json:"additionalProperties"`
+	TokenType            string            `json:"tokenType"`
+	ClientFeatures       map[string]bool   `json:"clientFeatures"`
+	SocialBans           socialBans        `json:"socialBans"`
+}
+
+// socialBans is SocialBansDto: {bans: [{startsAt, durationSeconds}]}.
+type socialBans struct {
+	Bans []any `json:"bans"`
 }
 
 // apiError is the error body the client's error handler reads: {title, errorCode, detail}.
@@ -121,15 +126,15 @@ func (s *server) login(w http.ResponseWriter, r *http.Request) {
 		Token:                s.sessionToken(account, exp),
 		Expiry:               exp.UTC().Format(time.RFC3339),
 		AccountID:            account,
-		Identities:           []identity{{Type: "EosSignIn", ID: epicID, AccountID: account}},
+		Identities:           map[string]string{"EosSignIn": epicID},
 		Roles:                []string{},
 		ContentURL:           s.contentURL,
 		ContentVersion:       s.contentVer,
 		ContentETag:          s.contentVer,
-		AdditionalProperties: map[string]any{},
+		AdditionalProperties: map[string]string{},
 		TokenType:            "Bearer",
-		ClientFeatures:       []string{},
-		SocialBans:           []any{},
+		ClientFeatures:       map[string]bool{},
+		SocialBans:           socialBans{Bans: []any{}},
 	}
 	log.Printf("[catapult] login ok account=%s", account[:8])
 	writeJSON(w, 200, resp)
