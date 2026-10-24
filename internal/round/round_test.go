@@ -176,7 +176,7 @@ func TestTwoPlayersThroughOneRound(t *testing.T) {
 		s.Data(c, append(setReady(uint64(100+i), 5), setReady(uint64(100+i), 6)...))
 	}
 	r = waitFor(t, a, gamemsg.ServerStartGame)
-	if st, end := r.F32(), r.F32(); st != 3 || end != 63 {
+	if st, end := r.F32(), r.F32(); st != 0 || end != 60 {
 		t.Fatalf("start %v end %v", st, end)
 	}
 
@@ -184,14 +184,25 @@ func TestTwoPlayersThroughOneRound(t *testing.T) {
 	s.Data(a, msg(gamemsg.Ping, func(w *hlapi.Writer) { w.F32(1); w.F32(2); w.U32(3); w.I32(0) }))
 	waitFor(t, a, gamemsg.Pong)
 
-	// a reaches the finish; then time runs out.
-	s.mu.Lock()
-	pa := s.players[a]
-	s.mu.Unlock()
-	pa.g.moved(pa, [3]float32{1, 0, 99})
+	// a runs into the finish; b sees a move; then time runs out.
+	s.Data(a, msg(gamemsg.ClientMotorTasks, func(w *hlapi.Writer) {
+		w.Packed(1)
+		w.Byte(1)
+		w.Packed(500)
+		w.Packed(0)
+		w.F32(10)
+		w.Byte(0)
+		w.Bool(false)
+		w.Vec3([3]float32{0, 0, 1})
+		w.U16(1 << gamemsg.TaskMove)
+		w.Bytes([]byte{128, 255})
+		gamemsg.EncodeTransform(w, [3]float32{1, 0, 99}, [3]float32{}, [3]float32{0, 0, 9})
+		w.Byte(0)
+	}))
+	waitFor(t, b, gamemsg.ServerMotorAgentState)
 	waitFor(t, b, gamemsg.ServerPlayerProgress)
 	clock.Lock()
-	now = 64
+	now = 66
 	clock.Unlock()
 	r = waitFor(t, a, gamemsg.ServerEndRound)
 	if ep := r.Byte(); ep != gamemsg.EpisodeComplete {

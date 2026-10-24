@@ -203,14 +203,18 @@ func (s *Server) handle(p *player, t gamemsg.Type, r *hlapi.Reader) error {
 		if err != nil {
 			return err
 		}
-		p.conn.SendUnreliable(gamemsg.EncodePong(pg, 0, s.cfg.Now()))
+		now := float32(-5)
+		if p.g != nil {
+			now = p.g.now()
+		}
+		p.conn.SendUnreliable(gamemsg.EncodePong(pg, 0, now))
 
 	case gamemsg.ClientMotorTasks:
 		if p.g == nil {
 			r.Pos = len(r.B)
 			return nil
 		}
-		p.g.motorTasks(p, r)
+		return p.g.motorTasks(p, r)
 
 	case gamemsg.ClientReadyRound:
 		r.U64()

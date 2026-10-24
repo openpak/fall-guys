@@ -57,7 +57,8 @@ type game struct {
 	since    time.Time
 	players  []*player
 	nextID   uint32
-	endTime  float32
+	startAt  float32 // server clock when START_GAME went out
+	tick     uint32
 	guid     gamemsg.Guid
 	finished int
 	done     chan struct{}
@@ -140,10 +141,40 @@ func (g *game) requestSpawn(p *player, rs gamemsg.RequestSpawn) {
 	g.mu.Unlock()
 }
 
-// motorTasks reads a client's movement. Until the snapshot layout is decoded the body is
-// skipped: the message runs to the end of its datagram.
-func (g *game) motorTasks(p *player, r *hlapi.Reader) {
-	r.Pos = len(r.B)
+// clock is the round's time as the clients count it: -5 at START_GAME, 0 when the race
+// starts. Before START_GAME it reads -5. Call with mu held.
+func (g *game) clock() float32 {
+	if g.phase < phasePlaying {
+		return -5
+	}
+	return g.s.cfg.Now() - g.startAt - 5
+}
+
+func (g *game) now() float32 {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	return g.clock()
+}
+
+// motorTasks reads a client's movement: the newest snapshot says where its fall guy is, and
+// the other players get it as that player's motor agent state.
+func (g *game) motorTasks(p *player, r *hlapi.Reader) error {
+	_, snaps, err := gamemsg.DecodeMotorTasks(r)
+	if err != nil || len(snaps) == 0 {
+		return err
+	}
+	s := snaps[len(snaps)-1]
+	g.moved(p, s.Transform.Position)
+	g.mu.Lock()
+	defer g.mu.Unlock()
+	g.tick++
+	msg := gamemsg.AgentState(p.objectID, s.LocalFrame, g.tick, g.clock(), s.TransformBytes, true)
+	for _, q := range g.live() {
+		if q != p {
+			q.conn.SendUnreliable(msg)
+		}
+	}
+	return nil
 }
 
 func (g *game) run() {
@@ -199,15 +230,15 @@ func (g *game) step() bool {
 		}
 	case phaseIntro:
 		if g.all(func(p *player) bool { return p.ready >= gamemsg.ReadyReadyToPlay }) || waited > cfg.StepWait {
-			now := cfg.Now()
-			start := now + 3
-			g.endTime = start + g.level.Duration
-			g.broadcast(gamemsg.StartGame(start, g.endTime, byte(len(live)), g.guid))
+			// The client's round clock starts at -5 when the level loads and runs on its own:
+			// start at 0 gives the usual five-second countdown.
+			g.startAt = cfg.Now()
+			g.broadcast(gamemsg.StartGame(0, g.level.Duration, byte(len(live)), g.guid))
 			log.Printf("[round] match %s: round started, %d player(s)", short(g.match.ID), len(live))
 			next(phasePlaying)
 		}
 	case phasePlaying:
-		if cfg.Now() >= g.endTime || g.all(func(p *player) bool { return p.qualified }) {
+		if g.clock() >= g.level.Duration || g.all(func(p *player) bool { return p.qualified }) {
 			g.endRound()
 			next(phaseOver)
 		}
@@ -271,7 +302,7 @@ func (g *game) qualify(p *player) {
 	}
 	p.qualified = true
 	g.finished++
-	ms := int32((g.s.cfg.Now() - (g.endTime - g.level.Duration)) * 1000)
+	ms := int32(g.clock() * 1000)
 	g.broadcast(gamemsg.Progress{PlayerID: p.playerID, Succeeded: true, QualifyTime: ms}.Encode())
 	g.broadcast(gamemsg.Qualification(uint32(g.finished), 0))
 	log.Printf("[round] match %s: player %d qualified (%d)", short(g.match.ID), p.playerID, g.finished)
