@@ -26,9 +26,9 @@ const (
 	ShowID    = "openpak_race_show"
 	EpisodeID = "openpak_race_episode"
 	PoolID    = "openpak_race_pool"
-	RoundID   = "openpak_round_door_dash"
+	RoundID   = "openpak_round_gauntlet_09"
 	// RoundScene is the client's addressable scene key for the round (it ships in the build).
-	RoundScene = "FallGuy_DoorDash"
+	RoundScene = "FallGuy_Gauntlet_09"
 )
 
 type row = map[string]any
@@ -43,8 +43,8 @@ func authored() map[string][]row {
 		"localised_strings": {
 			str("openpak_show_name", "OpenPak Race"),
 			str("openpak_show_description", "One race. First half through the finish qualifies."),
-			str("openpak_round_door_dash_name", "Door Dash"),
-			str("openpak_round_door_dash_description", "Find the real doors and reach the finish."),
+			str("openpak_round_race_name", "Race"),
+			str("openpak_round_race_description", "Reach the finish before the time runs out."),
 		},
 		"shows": {{
 			"id":                     ShowID,
@@ -73,12 +73,12 @@ func authored() map[string][]row {
 		}},
 		"levels_round": {{
 			"id":                RoundID,
-			"display_name":      "openpak_round_door_dash_name",
-			"round_description": "openpak_round_door_dash_description",
-			"scene_type":        row{"type": "prime", "prime_level": "openpak_prime_door_dash"},
+			"display_name":      "openpak_round_race_name",
+			"round_description": "openpak_round_race_description",
+			"scene_type":        row{"type": "prime", "prime_level": "openpak_prime_gauntlet_09"},
 			"game_rules":        "openpak_race_rules",
 		}},
-		"prime_levels": {{"id": "openpak_prime_door_dash", "scene_name": RoundScene}},
+		"prime_levels": {{"id": "openpak_prime_gauntlet_09", "scene_name": RoundScene}},
 		"game_rules": {{
 			"id":                       "openpak_race_rules",
 			"team_mode":                "solo",

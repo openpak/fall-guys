@@ -23,6 +23,8 @@ type Level struct {
 	Starts        []Start
 	Finish        []Box
 	EliminationsY float32 // falling below this height eliminates (0: none)
+	// UnspawnFinished: a player who finishes leaves the course (the end zone's own setting).
+	UnspawnFinished bool
 }
 
 type Start struct {
@@ -305,6 +307,9 @@ func (g *game) qualify(p *player) {
 	ms := int32(g.clock() * 1000)
 	g.broadcast(gamemsg.Progress{PlayerID: p.playerID, Succeeded: true, QualifyTime: ms}.Encode())
 	g.broadcast(gamemsg.Qualification(uint32(g.finished), 0))
+	if g.level.UnspawnFinished {
+		g.broadcast(gamemsg.Unspawn(p.objectID))
+	}
 	log.Printf("[round] match %s: player %d qualified (%d)", short(g.match.ID), p.playerID, g.finished)
 }
 
