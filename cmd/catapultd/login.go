@@ -83,6 +83,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.gateway(w, r)
 	case r.URL.Path == "/mms":
 		s.mms(w, r)
+	case strings.HasPrefix(r.URL.Path, "/api/v1/privacy-policy") || strings.HasPrefix(r.URL.Path, "/api/v1/eula"):
+		s.legalAgreement(w, r)
 	case r.URL.Path == "/internal/v1/match":
 		s.internalMatch(w, r)
 	default:
@@ -209,3 +211,15 @@ func writeError(w http.ResponseWriter, status int, code, detail string) {
 }
 
 func itoa64(n int64) string { return strconv.FormatInt(n, 10) }
+
+// legalAgreement: GET /api/v1/{privacy-policy,eula}?platformId=&locale= asks for an agreement
+// the player has not accepted yet. OpenPak's terms live on openpak.org, so there is never a new
+// one here: 204, nothing to show. Accepting (POST) is acknowledged.
+func (s *server) legalAgreement(w http.ResponseWriter, r *http.Request) {
+	log.Printf("[catapult] %s %s", r.Method, r.URL.Path)
+	if r.Method == http.MethodGet {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+	writeJSON(w, 200, map[string]any{})
+}
