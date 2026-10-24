@@ -15,11 +15,14 @@ const (
 
 func gatewayHandlers() map[string]handler {
 	return map[string]handler{
-		gw + "AuthenticationRequest":                 authenticate,
-		player + "Profile.GetProfileQuery":           getProfile,
-		player + "Settings.GetAllSettingsQuery":      getSettings,
-		player + "Settings.ConfigureSettingsCommand": configureSettings,
-		player + "Wallet.GetWalletQuery":             getWallet,
+		gw + "AuthenticationRequest":                                     authenticate,
+		player + "Profile.GetProfileQuery":                               getProfile,
+		player + "Settings.GetAllSettingsQuery":                          getSettings,
+		player + "Settings.ConfigureSettingsCommand":                     configureSettings,
+		player + "Wallet.GetWalletQuery":                                 getWallet,
+		gwMM + "Fn.GetPlayerMatchmakingTokenQuery":                       getMatchmakingToken,
+		gwMM + "CreateGameEntryTokenCommand":                             createGameEntryToken,
+		"FallGuys.Match.Protocol.Client.MatchStatus.GetMatchStatusQuery": getMatchStatus,
 	}
 }
 

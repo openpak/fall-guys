@@ -13,6 +13,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"openpak/fall-guys/internal/catapult"
@@ -34,6 +35,11 @@ func main() {
 		log.Fatalf("rpc table: %v", err)
 	}
 	s.handlers = gatewayHandlers()
+	s.mmsURL = envOr("CATAPULT_MMS_URL", "wss://gateway.fallguys.oncatapult.com/mms")
+	minPlayers, _ := strconv.Atoi(envOr("CATAPULT_MIN_PLAYERS", "2"))
+	maxWait, _ := time.ParseDuration(envOr("CATAPULT_MAX_WAIT", "30s"))
+	port, _ := strconv.Atoi(envOr("ROUND_SERVER_PORT", "23533"))
+	s.mm = newMatchmaker(minPlayers, maxWait, envOr("ROUND_SERVER_IP", "127.0.0.1"), port)
 	if len(s.secret) == 0 {
 		log.Fatal("CATAPULT_SECRET is required (signs session tokens)")
 	}

@@ -31,6 +31,8 @@ type server struct {
 	schema     *catapult.Schema
 	replies    map[string]string
 	handlers   map[string]handler
+	mm         *matchmaker
+	mmsURL     string
 }
 
 type loginRequest struct {
@@ -79,6 +81,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.login(w, r)
 	case r.URL.Path == "/ws":
 		s.gateway(w, r)
+	case r.URL.Path == "/mms":
+		s.mms(w, r)
 	default:
 		s.unhandled(w, r)
 	}
@@ -201,3 +205,5 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 func writeError(w http.ResponseWriter, status int, code, detail string) {
 	writeJSON(w, status, apiError{Title: http.StatusText(status), ErrorCode: code, Detail: detail})
 }
+
+func itoa64(n int64) string { return strconv.FormatInt(n, 10) }

@@ -115,6 +115,13 @@ func (ws *wsConn) read() ([]byte, error) {
 func (ws *wsConn) write(p []byte) error { return ws.writeFrame(0x2, p) }
 
 func (ws *wsConn) writeFrame(op byte, p []byte) error {
+	ws.mu.Lock()
+	defer ws.mu.Unlock()
+	return ws.writeFrameLocked(op, p)
+}
+
+// writeFrameLocked is writeFrame for a caller that already holds ws.mu.
+func (ws *wsConn) writeFrameLocked(op byte, p []byte) error {
 	h := []byte{0x80 | op}
 	switch {
 	case len(p) < 126:
@@ -125,8 +132,6 @@ func (ws *wsConn) writeFrame(op byte, p []byte) error {
 		h = append(h, 127)
 		h = binary.BigEndian.AppendUint64(h, uint64(len(p)))
 	}
-	ws.mu.Lock()
-	defer ws.mu.Unlock()
 	_, err := ws.c.Write(append(h, p...))
 	return err
 }
