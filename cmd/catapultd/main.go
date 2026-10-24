@@ -23,8 +23,8 @@ import (
 func main() {
 	addr := envOr("CATAPULT_ADDR", ":23530")
 	s := &server{
-		keys:       newKeySet(envOr("EOSD_JWKS_URL", "http://127.0.0.1:22620/auth/v1/oauth/jwks")),
-		secret:     []byte(os.Getenv("CATAPULT_SECRET")),
+		keys:   newKeySet(envOr("EOSD_JWKS_URL", "http://127.0.0.1:22620/auth/v1/oauth/jwks")),
+		secret: []byte(os.Getenv("CATAPULT_SECRET")),
 		// Plain http: the content downloader checks the server certificate against Mono's own
 		// store, not the console's, so it refuses the OpenPak CA (measured on Harbor). The
 		// document is public; nothing in it needs TLS.
