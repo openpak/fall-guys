@@ -172,3 +172,32 @@ func TestReceiveWindowWraps(t *testing.T) {
 		c.mark(id)
 	}
 }
+
+func TestReconnectMovesTheConnection(t *testing.T) {
+	r := &recorder{}
+	l, _ := Listen("127.0.0.1:0", r)
+	defer l.Close()
+	a := dial(t, l)
+	a.reliable(typeHello, "\x00")
+	a.readType(typeAck)
+	w := a.readType(typeWelcome)
+	a.send(typeAck, w[1], w[2], 0)
+
+	b := dial(t, l) // same client, new port
+	b.id = a.id
+	b.id++
+	b.send(typeReconnect, byte(b.id>>8), byte(b.id), w[3], w[4], w[5], w[6])
+	b.readType(typeAck)
+	b.reliable(typeReliable, "after")
+	b.readType(typeAck)
+	eventually(t, func() bool { d, _, _ := r.snapshot(); return len(d) == 1 })
+	if d, _, n := r.snapshot(); d[0] != "after" || n != 1 {
+		t.Fatalf("data %q conns %d", d, n)
+	}
+	r.mu.Lock()
+	c := r.conns[0]
+	r.mu.Unlock()
+	if c.Addr().String() != b.pc.LocalAddr().String() {
+		t.Fatalf("conn at %s, want %s", c.Addr(), b.pc.LocalAddr())
+	}
+}

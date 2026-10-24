@@ -11,8 +11,10 @@
 //	0x0a ack          [0a][id hi][id lo][mask]        mask bit i: id-1-i was received too
 //	0x0c ping         [0c][id hi][id lo]              reliable, carries nothing
 //	0x0d welcome      [0d][id hi][id lo][hazel id u32 LE]  server -> client, reliable
+//	0x0e reconnect    [0e][id hi][id lo][hazel id u32 LE]  client -> server, from a new address
 //
-// Types 2-7 and 11 are delivered like unreliable ones; 14 is ignored. Reliable delivery is not
+// The ack of the hello is what connects the client; the welcome only hands it the hazel id it
+// names in a reconnect. Types 2-7 and 11 are delivered like unreliable ones. Reliable delivery is not
 // ordered here: the layer above (the HLAPI message processors) sequences its own messages.
 //
 // Facts come from the client's Hazel.Udp.UdpConnection (DoHandleReceive, SendHello,
@@ -36,6 +38,7 @@ const (
 	typeAck        = 0x0a
 	typePing       = 0x0c
 	typeWelcome    = 0x0d
+	typeReconnect  = 0x0e
 
 	// MaxDatagram is the largest datagram the client sends unfragmented (UnreliableSend
 	// counts anything from 1201 bytes as oversized).
@@ -125,6 +128,21 @@ func (l *Listener) receive(pkt []byte, from net.Addr) {
 	key := from.String()
 	l.mu.Lock()
 	c := l.conns[key]
+	if c == nil && pkt[0] == typeReconnect && len(pkt) >= 7 {
+		// The client's address changed: move its connection to the new one.
+		id := binary.LittleEndian.Uint32(pkt[3:])
+		for k, old := range l.conns {
+			if old.ID == id {
+				delete(l.conns, k)
+				old.mu.Lock()
+				old.addr = from
+				old.mu.Unlock()
+				l.conns[key] = old
+				c = old
+				break
+			}
+		}
+	}
 	if c == nil {
 		if pkt[0] != typeHello || len(pkt) < 3 || l.closed {
 			l.mu.Unlock()
@@ -196,7 +214,12 @@ type Conn struct {
 	events sync.Mutex
 }
 
-func (c *Conn) Addr() net.Addr { return c.addr }
+// Addr is where the client is now (a reconnect moves it).
+func (c *Conn) Addr() net.Addr {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.addr
+}
 
 // RTT is the last measured round trip of a reliable datagram.
 func (c *Conn) RTT() time.Duration {
@@ -226,7 +249,7 @@ func (c *Conn) receive(pkt []byte) {
 			}
 			c.acked(id, mask)
 		}
-	case typeHello, typeReliable, typePing:
+	case typeHello, typeReliable, typePing, typeReconnect:
 		if len(pkt) < 3 {
 			return
 		}
@@ -248,7 +271,6 @@ func (c *Conn) receive(pkt []byte) {
 		case typeReliable:
 			c.emit(func(h Handler) { h.Data(c, pkt[3:], true) })
 		}
-	case 14:
 	default: // 0, 2-7, 11: unreliable framing
 		if len(pkt) < 3 {
 			return
@@ -359,10 +381,11 @@ func (c *Conn) sendTracked(b []byte) {
 }
 
 func (c *Conn) write(b []byte) {
+	to := c.Addr()
 	if len(b) > MaxDatagram {
-		log.Printf("[hazel] %s: datagram of %d bytes is over the client's limit", c.addr, len(b))
+		log.Printf("[hazel] %s: datagram of %d bytes is over the client's limit", to, len(b))
 	}
-	_, _ = c.l.pc.WriteTo(b, c.addr)
+	_, _ = c.l.pc.WriteTo(b, to)
 }
 
 func (c *Conn) tick(now time.Time) {
