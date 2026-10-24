@@ -83,6 +83,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.gateway(w, r)
 	case r.URL.Path == "/mms":
 		s.mms(w, r)
+	case r.URL.Path == "/internal/v1/match":
+		s.internalMatch(w, r)
 	default:
 		s.unhandled(w, r)
 	}

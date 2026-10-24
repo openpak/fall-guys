@@ -33,9 +33,10 @@ type matchmaker struct {
 	serverIP   string
 	serverPort int
 
-	mu      sync.Mutex
-	waiting []*mmTicket
-	matches map[string]*match
+	mu        sync.Mutex
+	waiting   []*mmTicket
+	matches   map[string]*match
+	byAccount map[string]*match // each account's latest match
 }
 
 type mmTicket struct {
@@ -51,7 +52,7 @@ type match struct {
 }
 
 func newMatchmaker(minPlayers int, maxWait time.Duration, ip string, port int) *matchmaker {
-	m := &matchmaker{minPlayers: minPlayers, maxWait: maxWait, serverIP: ip, serverPort: port, matches: map[string]*match{}}
+	m := &matchmaker{minPlayers: minPlayers, maxWait: maxWait, serverIP: ip, serverPort: port, matches: map[string]*match{}, byAccount: map[string]*match{}}
 	go m.loop()
 	return m
 }
@@ -92,6 +93,7 @@ func (m *matchmaker) loop() {
 			}
 			m.matches[mt.ID] = mt
 			for _, t := range m.waiting {
+				m.byAccount[t.account] = mt
 				t.done <- mt
 			}
 			m.waiting = nil
@@ -102,6 +104,11 @@ func (m *matchmaker) loop() {
 				delete(m.matches, id)
 			}
 		}
+		for acct, mt := range m.byAccount {
+			if m.matches[mt.ID] != mt {
+				delete(m.byAccount, acct)
+			}
+		}
 		m.mu.Unlock()
 	}
 }
@@ -110,6 +117,29 @@ func (m *matchmaker) get(id string) *match {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	return m.matches[id]
+}
+
+func (m *matchmaker) forAccount(account string) *match {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.byAccount[account]
+}
+
+// internalMatch tells the round server which match an account is in. It is reachable through
+// the public route too, so it wants the shared secret.
+func (s *server) internalMatch(w http.ResponseWriter, r *http.Request) {
+	tok, _ := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if !hmac.Equal([]byte(tok), s.secret) {
+		http.Error(w, "unauthorized", 401)
+		return
+	}
+	mt := s.mm.forAccount(r.URL.Query().Get("account"))
+	if mt == nil {
+		http.Error(w, "no match", 404)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(map[string]any{"matchId": mt.ID, "players": mt.Players})
 }
 
 // ---- tickets ----
