@@ -25,7 +25,10 @@ func main() {
 	s := &server{
 		keys:       newKeySet(envOr("EOSD_JWKS_URL", "http://127.0.0.1:22620/auth/v1/oauth/jwks")),
 		secret:     []byte(os.Getenv("CATAPULT_SECRET")),
-		contentURL: envOr("CATAPULT_CONTENT_URL", "https://login.fallguys.oncatapult.com"+contentPath+cms.Version()),
+		// Plain http: the content downloader checks the server certificate against Mono's own
+		// store, not the console's, so it refuses the OpenPak CA (measured on Harbor). The
+		// document is public; nothing in it needs TLS.
+		contentURL: envOr("CATAPULT_CONTENT_BASE", "http://login.fallguys.oncatapult.com") + contentPath + cms.Version(),
 		contentVer: envOr("CATAPULT_CONTENT_VERSION", cms.Version()),
 	}
 	var err error
