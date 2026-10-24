@@ -1,47 +1,25 @@
 # fall-guys
 
-> **Superseded 2026-09-24 by [`servers/eos`](../eos).** The study below is carried there as
-> `docs/fall-guys.md` and `docs/fall-guys-evidence.md`. Its identity-layer verdict is
-> reversed in principle (OpenPak answers `api.epicgames.dev` itself); its match-server
-> verdict stands. Nothing here is maintained.
+Network replacement for **Fall Guys** on Nintendo Switch.
 
-Feasibility study for replacing the network **Fall Guys** uses on Nintendo Switch.
+## Status (2026-10-24): reopened, partly feasible
 
-## Status: not feasible. Documentation only.
+The 2026-09 verdict said "not feasible, documentation only". It is revised after the Switch
+client's own code was read ([`docs/protocol.md`](docs/protocol.md)):
 
-There is no code here and none is planned. The full reasoning is in
-[`docs/design.md`](docs/design.md); the short version:
+- **Buildable:** everything up to the match server. That means EOS sign-in (in
+  [`../eos`](../eos)), the Catapult login and gateway (profile, inventory, store, shows,
+  matchmaking), and an authored content document. The client describes every wire shape it
+  uses.
+- **Not buildable from the client:** the rounds themselves. The shared game code ships the
+  per-obstacle server reactions, but the round authority (spawning, qualification, elimination,
+  scoring, show flow) is an interface that nothing in the build implements, and there is no
+  client-hosted mode. A round server would have to be written from scratch against the
+  protocol, one round type at a time. Full parity with Epic's servers is not a realistic goal.
 
-Fall Guys on Switch is an Epic live service with three third-party backends —
-Epic Online Services for identity (`api.epicgames.dev`), Mediatonic's Catapult
-backend for login and matchmaking, and Epic-hosted **authoritative match servers
-that run the game simulation**. The first is a token Epic verifies with Nintendo,
-so an OpenPak identity can never satisfy it without us replacing EOS. The third
-is the wall: up to 60 players' physics, level state and round outcomes are
-computed on a server build that has never shipped to anyone, and Fall Guys has no
-client-hosted or listen-server mode. Replacing it means writing the game, not the
-network.
-
-That is unlike [`servers/outbound`](../outbound), where Photon Fusion's Shared
-mode puts the simulation inside the client and [`servers/photon`](../photon) can
-host the game's own `Simulation.Server`. No equivalent exists here.
-
-The service is also still live, so this is not a preservation case. Fall Guys
-breaks on an OpenPak console only because the console's identity is ours. The
-right handling in production is to **not** redirect `api.epicgames.dev` or
-`*.oncatapult.com` and let the title reach the real service.
-
-Consequences:
-
-- No port block is claimed in [`ports.md`](https://docs.openpak.org/contributors/ports/).
-- No deploy target, compose entry or status check.
-- [`docs/evidence-needed.md`](docs/evidence-needed.md) lists the experiments that
-  would confirm or overturn this, cheapest first. Only the first one (does the
-  Switch build contain a client-hosted match path?) can reopen the project.
-
-Reopen this repository if a server build becomes obtainable, if someone ships an
-open-source authoritative Fall Guys server under an AGPL-3.0-compatible licence,
-or if that first experiment finds a client-hosted path.
+Code so far: `cmd/catapultd`, the login service (`POST /api/v1/login`, `EosSignIn` tokens
+checked against eosd's JWKS). It is not deployed: the Catapult host names are outside the
+signed redirect ceiling until the owner adds `.oncatapult.com`.
 
 ## Ground rules
 
