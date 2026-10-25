@@ -1,48 +1,41 @@
-# fall-guys
+# Fall Guys
 
-Network replacement for **Fall Guys** on Nintendo Switch.
+OpenPak's Fall Guys Server.
 
-## Status (2026-10-24): lobby layer built, round server started
+| | |
+| --- | --- |
+| Game | [Fall Guys](https://openpak.org/titles#t-21) |
+| Network | Nintendo Switch |
+| Licence | AGPL-3.0-only |
 
-The rounds are the hard part. The client ships the per-obstacle server reactions but none of
-the round authority (spawning, qualification, elimination, scoring, show flow), and it has no
-client-hosted mode. So `roundd` is written from scratch against the protocol, one round type
-at a time. Full parity with Epic's servers is not the goal; each round type below is added
-and tested on its own.
+## What it serves
 
-| Piece | Code | State |
-|---|---|---|
-| EOS sign-in, EOS Auth (Epic account) | [`../eos`](../eos) | works on Harbor |
-| Catapult login (privacy policy, EULA, login) | `cmd/catapultd` | works on Harbor |
-| Gateway (profile, wallet, settings, matchmaking token) | `cmd/catapultd` | written; more handlers follow the client's requests |
-| Content document (one show, one round) | `internal/cms` | authored; served over plain http (the downloader rejects the OpenPak CA), route pending |
-| Matchmaking socket and match status | `cmd/catapultd` | written |
-| Round server transport (Hazel, HLAPI framing) | `internal/hazel`, `internal/hlapi` | written, unit tested |
-| Round server flow (connect, load, spawn, start, end) | `internal/round`, `cmd/roundd` | written, unit tested |
+| Host | What | Served by |
+| --- | --- | --- |
+| `login.fallguys.oncatapult.com` | Login (`/api/v1/`), content document | `catapultd` |
+| `gateway.fallguys.oncatapult.com` | Gateway socket: profile, wallet, settings, matchmaking | `catapultd` |
+| UDP `23533`, address from the match status | Rounds (Hazel transport) | `roundd` |
 
-### Round types
+## Run
 
-Each round type is done when two accounts on Harbor play it to the results screen.
+```sh
+go build -o catapultd ./cmd/catapultd
+go build -o roundd ./cmd/roundd
+CATAPULT_SECRET=<secret> ./catapultd
+CATAPULT_SECRET=<secret> ./roundd
+```
 
-| Round type | Example | State |
-|---|---|---|
-| Race (reach the finish) | first race round | in progress: flow written; level data, movement relay and two-account Harbor test to do |
-| Survival | | not started |
-| Team | | not started |
-| Hunt | | not started |
-| Logic | | not started |
-| Final | | not started |
+## Docs
 
-## Ground rules
+- [Protocol](docs/protocol.md)
+- [Evidence](docs/evidence.md)
+- [Deploy](docs/deploy.md)
+- [Notes](docs/notes.md)
+- [Design](docs/design.md)
+- [Evidence still needed](docs/evidence-needed.md)
 
-- Clean room. Read [clean-room policy](https://docs.openpak.org/contributors/clean-room/)
-  before writing a line. Public protocol documentation, our own captures, and
-  compatibly licensed code are the only inputs. Provenance for this study is
-  recorded at the end of `docs/design.md`.
-- AGPL-3.0-only, English only, Go 1.25, no secrets in the repository.
+Live compatibility status: [openpak.org/titles#t-21](https://openpak.org/titles#t-21).
 
-This project is not affiliated with or endorsed by Nintendo, Mediatonic, Epic
-Games, or any original service provider. It contains no proprietary game code,
-assets, SDK material, binaries, certificates, keys, firmware, extracted files,
-credentials, or raw packet captures. Fall Guys is a trademark of Mediatonic
-Limited.
+## Licence
+
+AGPL-3.0-only. See [LICENSE](LICENSE).
