@@ -46,3 +46,4 @@ dist/
 deploy/oci/.env
 deploy/oci/certs/
 shared-docs
+next-session.md
