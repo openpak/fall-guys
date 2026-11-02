@@ -29,9 +29,10 @@ CATAPULT_SECRET=<secret> ./roundd
 
 - [Protocol](docs/protocol.md)
 - [Deploy](docs/deploy.md)
-- [Notes](docs/notes.md)
 - [Design](docs/design.md)
 - [Evidence still needed](docs/evidence-needed.md)
+
+PRDs: openpak/prds (private)
 
 Live compatibility status: [openpak.org/titles#t-21](https://openpak.org/titles#t-21).
 

@@ -126,3 +126,21 @@ client  MOTORTASKS, PING                    server  others' movement, PONG (serv
 The server decides who qualifies: the finish trigger reports only on a game server. Each
 console has positional authority over its own character, so the server tests the positions
 the clients report against the level's finish volume. The server also picks start positions.
+
+## Implementation map
+
+The rounds are the hard part. The client ships the per-obstacle server reactions but none of the
+round authority (spawning, qualification, elimination, scoring, show flow), and it has no
+client-hosted mode. So `roundd` is written from scratch against the protocol, one round type at a
+time (race, survival, team, hunt, logic, final); full parity with Epic's servers is not the goal.
+A round type is complete when two accounts on Harbor play it to the results screen.
+
+| Piece | Code |
+|---|---|
+| EOS sign-in, EOS Auth (Epic account) | `platforms/switch/games/eos` |
+| Catapult login (privacy policy, EULA, login) | `cmd/catapultd` |
+| Gateway (profile, wallet, settings, matchmaking token) | `cmd/catapultd` |
+| Content document (one show, one round) | `internal/cms`, served over plain http: the downloader rejects the OpenPak CA |
+| Matchmaking socket and match status | `cmd/catapultd` |
+| Round server transport (Hazel, HLAPI framing) | `internal/hazel`, `internal/hlapi` |
+| Round server flow (connect, load, spawn, start, end) | `internal/round`, `cmd/roundd` |
