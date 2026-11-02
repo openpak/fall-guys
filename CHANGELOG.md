@@ -3,6 +3,10 @@
 Generated from git history on 2026-09-15. `git log` stays the source
 of truth; this file is the readable summary.
 
+## Unreleased: release workflow and container build
+
+- Add a release workflow publishing the image to ghcr.io on v*.*.* tags.
+
 ## History — no releases tagged yet
 
 - chore: drop the empty module; go test ./... exits 1 with no packages [45cc512]
