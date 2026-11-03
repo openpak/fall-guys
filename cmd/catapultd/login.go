@@ -33,6 +33,7 @@ type server struct {
 	handlers   map[string]handler
 	mm         *matchmaker
 	mmsURL     string
+	baas       *baasMap // account -> BAAS user id for rewards (baas.go); nil in tests
 }
 
 type loginRequest struct {
@@ -92,6 +93,8 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.legalAgreement(w, r)
 	case r.URL.Path == "/internal/v1/match":
 		s.internalMatch(w, r)
+	case r.URL.Path == "/internal/v1/baas" && s.baas != nil:
+		s.internalBaas(w, r)
 	default:
 		s.unhandled(w, r)
 	}
@@ -121,6 +124,9 @@ func (s *server) login(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	account := s.accountID(epicID)
+	if s.baas != nil {
+		s.baas.remember(r.Context(), account, epicID)
+	}
 	exp := time.Now().Add(sessionTTL)
 	resp := loginResponse{
 		Token:                s.sessionToken(account, exp),

@@ -7,6 +7,7 @@
 package main
 
 import (
+	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/base64"
@@ -18,6 +19,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"openpak/fall-guys/internal/hazel"
@@ -41,6 +43,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	startRewards(context.Background(), s, d, os.Getenv("FALL_GUYS_DATABASE_URL"))
 	log.Printf("[round] listening on udp %s, round %s", l.Addr(), level.RoundID)
 	select {}
 }
@@ -62,6 +65,9 @@ type directory struct {
 	secret   []byte
 	catapult string
 	client   *http.Client
+
+	mu        sync.Mutex
+	baasCache map[string]string
 }
 
 // Account checks a catapultd entry token: "<account>.<base64url hmac('entry\0'+account)>".

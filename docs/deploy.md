@@ -35,3 +35,21 @@ Plain HTTP runs inside the pod network. Traefik terminates the console's TLS for
 | `ROUND_ADDR` | `roundd` | `:23533` | Round server UDP listener |
 | `ROUND_LEVEL` | `roundd` | `round.DefaultLevel` | Round to run; must be a known level |
 | `CATAPULT_INTERNAL_URL` | `roundd` | `http://127.0.0.1:23530` | `catapultd` base for match lookups |
+
+## Rewards sessions and durable state
+
+`roundd` reports `game_sessions.fall-guys`: a player counts once per match after 3 continuous minutes
+connected to the round server together with another player (a match whose round ended is no longer a
+room). `catapultd` maps the Epic account to a BAAS user id at login (eosd `GET /internal/v1/owner/<id>`)
+and `roundd` reads that back from `catapultd` `/internal/v1/baas`. Accounts eosd never issued are left
+out and never count.
+
+| Variable | Process | Meaning |
+| --- | --- | --- |
+| `FALL_GUYS_DATABASE_URL` | both | Postgres (`postgres://fall_guys:...@openpak-postgres:5432/fall_guys?sslmode=disable`): `fg_accounts` (account -> BAAS id) and `fg_session_clock`. Pool of 2. Down: runs on memory, ERROR log, retried every 30 s. Unset: memory only (development) |
+| `EOS_INTERNAL_URL`, `EOS_INTERNAL_KEY` | `catapultd` | eosd health listener (`http://openpak-eos:22621`) and its internal key (eos >= v0.5.0) |
+| `REWARDS_EVENTS_URL`, `REWARDS_EVENTS_KEY` | `roundd` | rewards (bridge `http://openpak-rewards:20180`); unset: no events |
+| `REWARDS_SESSION_MIN` | `roundd` | optional, default 3m |
+
+Matchmaking's live queue and in-flight matches are not persisted: they exist only while the round
+server's UDP connections do.

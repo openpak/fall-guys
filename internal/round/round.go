@@ -271,3 +271,25 @@ func (s *Server) forget(g *game) {
 	}
 	s.mu.Unlock()
 }
+
+// Rooms is who is connected right now, per match: match id -> accounts. A match whose round has ended
+// is gone from here, which is what a session that ended looks like to the rewards clock.
+func (s *Server) Rooms() map[string][]string {
+	s.mu.Lock()
+	games := make([]*game, 0, len(s.games))
+	for _, g := range s.games {
+		games = append(games, g)
+	}
+	s.mu.Unlock()
+	out := map[string][]string{}
+	for _, g := range games {
+		g.mu.Lock()
+		for _, p := range g.players {
+			if !p.gone && p.account != "" {
+				out[g.match.ID] = append(out[g.match.ID], p.account)
+			}
+		}
+		g.mu.Unlock()
+	}
+	return out
+}

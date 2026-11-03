@@ -10,6 +10,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -47,6 +48,8 @@ func main() {
 	if len(s.secret) == 0 {
 		log.Fatal("CATAPULT_SECRET is required (signs session tokens)")
 	}
+	s.baas = newBaasMap()
+	s.baas.startStore(context.Background(), os.Getenv("FALL_GUYS_DATABASE_URL"))
 	h := http.NewServeMux()
 	h.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })
 	h.HandleFunc(contentPath, serveContent)

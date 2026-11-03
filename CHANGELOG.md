@@ -3,6 +3,13 @@
 Generated from git history on 2026-09-15. `git log` stays the source
 of truth; this file is the readable summary.
 
+## v0.2.0 — 2026-11-03
+
+- Rewards: `roundd` reports `game_sessions.fall-guys` from who is connected to the round server;
+  `catapultd` maps accounts to BAAS user ids through eosd. Account map and session clock live in
+  Postgres (`FALL_GUYS_DATABASE_URL`); restart tests against a real Postgres
+  (`FALL_GUYS_TEST_DATABASE_URL`).
+
 ## v0.1.0 — 2026-11-02
 
 - Release workflow publishing to ghcr.io; replaces the hand-built production image.
