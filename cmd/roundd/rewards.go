@@ -1,8 +1,9 @@
 package main
 
-// Fall Guys online sessions for rewards: game_sessions.fall-guys. A player counts once per match after
-// 3 continuous minutes in it with another player, judged on who is actually connected to the round
-// server (Server.Rooms), not on who matchmaking listed. Accounts map to BAAS user ids through
+// Fall Guys online sessions for rewards: game_sessions.fall-guys. The room is the whole match (the show,
+// every round of it): a player counts once per match after 3 minutes in it, adding up across rounds,
+// with another player in it. Presence is who is actually connected to the round server (Server.Rooms),
+// not who matchmaking listed, and a player stays in the match for matchGrace after a drop. Accounts map to BAAS user ids through
 // catapultd (/internal/v1/baas, kept in Postgres). The session clock is saved in Postgres
 // (FALL_GUYS_DATABASE_URL) after every change and restored at start; Postgres down at start: ERROR
 // level, memory only, retried every 30 s (the clock is not restored late).
@@ -57,10 +58,57 @@ func (d *directory) baas(account string) string {
 	return o.Baas
 }
 
-// snapshot turns the server's rooms into rewards rooms; accounts without a BAAS id are left out.
-func snapshot(s *round.Server, baas func(string) string) []emit.Room {
+// matchGrace is how long a player stays in their match after their connection drops: a show is several
+// rounds, the client leaves the round server between them and joins again, and an eliminated player
+// simply does not come back. Longer than the gap between rounds, far shorter than a session.
+const matchGrace = 2 * time.Minute
+
+// matches remembers who is in each match across rounds. The room is the whole match (its id is the
+// matchmaking match id catapultd and roundd share), so a player's minutes add up over the show.
+type matches struct {
+	mu   sync.Mutex
+	seen map[string]map[string]time.Time // match id -> account -> last time connected
+}
+
+func newMatches() *matches { return &matches{seen: map[string]map[string]time.Time{}} }
+
+// observe records who is connected to the round server right now (match id -> accounts) and returns the
+// accounts in each match: connected now, or connected within matchGrace. Matches nobody is left in drop.
+func (m *matches) observe(now time.Time, connected map[string][]string) map[string][]string {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	for id, accts := range connected {
+		if m.seen[id] == nil {
+			m.seen[id] = map[string]time.Time{}
+		}
+		for _, a := range accts {
+			m.seen[id][a] = now
+		}
+	}
+	out := map[string][]string{}
+	for id, set := range m.seen {
+		for a, t := range set {
+			if now.Sub(t) > matchGrace {
+				delete(set, a)
+				continue
+			}
+			out[id] = append(out[id], a)
+		}
+		if len(set) == 0 {
+			delete(m.seen, id)
+		}
+	}
+	return out
+}
+
+// snapshot turns the matches into rewards rooms; accounts without a BAAS id are left out.
+func snapshot(m *matches, s *round.Server, baas func(string) string) []emit.Room {
+	return rooms(m.observe(time.Now(), s.Rooms()), baas)
+}
+
+func rooms(byMatch map[string][]string, baas func(string) string) []emit.Room {
 	var out []emit.Room
-	for id, accts := range s.Rooms() {
+	for id, accts := range byMatch {
 		r := emit.Room{ID: id}
 		for _, a := range accts {
 			if b := baas(a); b != "" {
@@ -180,6 +228,7 @@ func startRewards(ctx context.Context, s *round.Server, d *directory, dburl stri
 			log.Printf("[round] session clock persisted in Postgres")
 		}
 	}
-	sess.Watch(ctx, 20*time.Second, func() []emit.Room { return snapshot(s, d.baas) })
+	ms := newMatches()
+	sess.Watch(ctx, 20*time.Second, func() []emit.Room { return snapshot(ms, s, d.baas) })
 	log.Printf("[round] rewards events are on: %s", sessionMetric)
 }

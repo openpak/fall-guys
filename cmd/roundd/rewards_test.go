@@ -80,3 +80,41 @@ func TestSessionClockSurvivesRestart(t *testing.T) {
 		t.Fatalf("event not delivered: %v", bodies)
 	}
 }
+
+// A show of four rounds of 50 seconds, the players leaving and rejoining the round server between
+// rounds, is one room: each player counts exactly once, and a single 50 s round counts nobody.
+func TestFourShortRoundsCountOncePerPlayer(t *testing.T) {
+	baas := func(a string) string { return "baas-" + a }
+	t0 := time.Unix(1_800_000_000, 0)
+	run := func(rounds int) int {
+		ms := newMatches()
+		sess := emit.NewSessions(emit.New(emit.Config{URL: "http://x", Key: "k", Source: "t"}), sessionMetric, 3*time.Minute)
+		total := 0
+		for sec := 0; sec < rounds*60+240; sec += 5 {
+			now := t0.Add(time.Duration(sec) * time.Second)
+			connected := map[string][]string{}
+			if r := sec / 60; r < rounds && sec%60 < 50 { // 50 s in a round, 10 s between rounds
+				connected["match-1"] = []string{"acct-a", "acct-b"}
+			}
+			total += sess.Tick(now, rooms(ms.observe(now, connected), baas))
+		}
+		return total
+	}
+	if got := run(4); got != 2 {
+		t.Fatalf("4 rounds of 50 s: %d events, want 2 (once per player)", got)
+	}
+	if got := run(1); got != 0 {
+		t.Fatalf("one 50 s round: %d events, want 0", got)
+	}
+}
+
+// A player who is eliminated (does not come back) stops counting once the grace is over.
+func TestEliminatedPlayerLeavesTheMatch(t *testing.T) {
+	ms := newMatches()
+	t0 := time.Unix(1_800_000_000, 0)
+	ms.observe(t0, map[string][]string{"m": {"a", "b"}})
+	got := ms.observe(t0.Add(matchGrace+time.Second), map[string][]string{"m": {"a"}})
+	if len(got["m"]) != 1 || got["m"][0] != "a" {
+		t.Fatalf("after elimination: %v", got)
+	}
+}

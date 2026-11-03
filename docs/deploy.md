@@ -38,9 +38,10 @@ Plain HTTP runs inside the pod network. Traefik terminates the console's TLS for
 
 ## Rewards sessions and durable state
 
-`roundd` reports `game_sessions.fall-guys`: a player counts once per match after 3 continuous minutes
-connected to the round server together with another player (a match whose round ended is no longer a
-room). `catapultd` maps the Epic account to a BAAS user id at login (eosd `GET /internal/v1/owner/<id>`)
+`roundd` reports `game_sessions.fall-guys`: a player counts once per match after 3 minutes in it with another
+player. The room is the whole match (the show), under the match id catapultd and roundd share: minutes add up
+across rounds, and a player stays in the match for 2 minutes after their connection drops (the client leaves
+the round server between rounds), so only elimination or leaving ends it. `catapultd` maps the Epic account to a BAAS user id at login (eosd `GET /internal/v1/owner/<id>`)
 and `roundd` reads that back from `catapultd` `/internal/v1/baas`. Accounts eosd never issued are left
 out and never count.
 

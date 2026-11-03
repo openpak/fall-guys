@@ -3,6 +3,12 @@
 Generated from git history on 2026-09-15. `git log` stays the source
 of truth; this file is the readable summary.
 
+## v0.2.1 — 2026-11-03
+
+- Rewards: the session room is the whole match, not one round. Presence is kept for 2 minutes after a
+  drop, so a show of short rounds adds up to one session per player (test: four 50 s rounds count once
+  per player, one round counts nobody).
+
 ## v0.2.0 — 2026-11-03
 
 - Rewards: `roundd` reports `game_sessions.fall-guys` from who is connected to the round server;
