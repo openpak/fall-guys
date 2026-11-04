@@ -54,3 +54,9 @@ out and never count.
 
 Matchmaking's live queue and in-flight matches are not persisted: they exist only while the round
 server's UDP connections do.
+
+## Account erasure
+
+`DELETE /internal/accounts/{account_id}/data` on catapultd's own erase listener (`ERASE_ADDR`, default `:9099`; `http://openpak-fall-guys:9099`), never published or routed, header `Authorization: Bearer <ACCOUNT_ERASE_KEY>`; key unset answers 503. Needs `ACCOUNT_GRPC_ADDR` + `ACCOUNT_INTERNAL_KEY` (read-only core link lookup: the Fall Guys account id is an HMAC and cannot be reversed). Answers `{"service":"fall-guys","rows":N}`.
+
+Erased: `fg_accounts` rows mapped to the account's BAAS ids, the account's keys in `fg_session_clock`, and catapultd's memory (id cache, matchmaking queue, latest match). roundd keeps only a short-lived in-process copy of the mapping and clock, which expires with the match and is not re-saved once the mapping row is gone. Kept: nothing; the service stores no profile, inventory or UGC.

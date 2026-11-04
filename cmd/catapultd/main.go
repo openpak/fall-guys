@@ -50,6 +50,8 @@ func main() {
 	}
 	s.baas = newBaasMap()
 	s.baas.startStore(context.Background(), os.Getenv("FALL_GUYS_DATABASE_URL"))
+	s.links = newLinksFromEnv()
+	s.serveErase()
 	h := http.NewServeMux()
 	h.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(204) })
 	h.HandleFunc(contentPath, serveContent)

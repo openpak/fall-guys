@@ -33,7 +33,8 @@ type server struct {
 	handlers   map[string]handler
 	mm         *matchmaker
 	mmsURL     string
-	baas       *baasMap // account -> BAAS user id for rewards (baas.go); nil in tests
+	baas       *baasMap    // account -> BAAS user id for rewards (baas.go); nil in tests
+	links      switchLinks // account core, read-only (erasure); nil when not configured
 }
 
 type loginRequest struct {

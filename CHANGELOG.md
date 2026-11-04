@@ -3,6 +3,10 @@
 Generated from git history on 2026-09-15. `git log` stays the source
 of truth; this file is the readable summary.
 
+## v0.3.0 — 2026-11-04
+
+- Account erasure (prds#120): `DELETE /internal/accounts/{account_id}/data` on a separate listener of catapultd (`ERASE_ADDR`, default `:9099`, not routed; `Authorization: Bearer $ACCOUNT_ERASE_KEY`, unset = 503). Looks up the account's BAAS ids in the core (`ACCOUNT_GRPC_ADDR`, `ACCOUNT_INTERNAL_KEY`, read-only ListAccountLinks; unconfigured = 500) and deletes the `fg_accounts` rows (Fall Guys account -> BAAS id), the account's entries in `fg_session_clock`, and catapultd's in-memory id cache, matchmaking queue entries and latest match for it. Nothing else is stored per player.
+
 ## v0.2.1 — 2026-11-03
 
 - Rewards: the session room is the whole match, not one round. Presence is kept for 2 minutes after a
