@@ -4,8 +4,10 @@ package main
 // of its type and an "!! unhandled" log line.
 
 import (
+	"context"
 	"errors"
-	"sync"
+
+	"openpak/fall-guys/internal/store"
 )
 
 const (
@@ -54,36 +56,43 @@ func getProfile(g *gwSession, _ map[string]any) (map[string]any, error) {
 	}, nil
 }
 
-// settings are per account and in memory: they only need to survive a session for now.
-var (
-	settingsMu sync.Mutex
-	settings   = map[string]map[string]any{}
-)
+// settings are per account and live in Postgres (fg_settings); with no database they are refused,
+// never kept in memory.
+func (g *gwSession) settingsDB() (*store.DB, error) {
+	if g.s.baas != nil {
+		g.s.baas.mu.Lock()
+		db := g.s.baas.db
+		g.s.baas.mu.Unlock()
+		if db != nil {
+			return db, nil
+		}
+	}
+	return nil, errors.New("settings store unavailable")
+}
 
 func getSettings(g *gwSession, _ map[string]any) (map[string]any, error) {
-	settingsMu.Lock()
-	defer settingsMu.Unlock()
-	v := settings[g.acct()]
-	if v == nil {
-		v = map[string]any{}
+	db, err := g.settingsDB()
+	if err != nil {
+		return nil, err
+	}
+	v, err := db.Settings(context.Background(), g.acct())
+	if err != nil {
+		return nil, err
 	}
 	return map[string]any{"Values": v}, nil
 }
 
 func configureSettings(g *gwSession, body map[string]any) (map[string]any, error) {
-	settingsMu.Lock()
-	v := settings[g.acct()]
-	if v == nil {
-		v = map[string]any{}
-		settings[g.acct()] = v
+	db, err := g.settingsDB()
+	if err != nil {
+		return nil, err
 	}
-	if in, ok := body["Values"].(map[string]any); ok {
-		for k, x := range in {
-			v[k] = x
-		}
+	in, _ := body["Values"].(map[string]any)
+	v, err := db.MergeSettings(context.Background(), g.acct(), in)
+	if err != nil {
+		return nil, err
 	}
-	settingsMu.Unlock()
-	return getSettings(g, nil)
+	return map[string]any{"Values": v}, nil
 }
 
 // getWallet: everything in the store is owned, so currency only needs to look plausible.

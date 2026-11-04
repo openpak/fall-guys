@@ -5,6 +5,7 @@ package store
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/jackc/pgx/v5"
@@ -19,6 +20,11 @@ const schema = `CREATE TABLE IF NOT EXISTS fg_accounts (
 CREATE TABLE IF NOT EXISTS fg_session_clock (
 	metric   text PRIMARY KEY,
 	state    text NOT NULL,
+	saved_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE TABLE IF NOT EXISTS fg_settings (
+	account  text PRIMARY KEY,
+	settings jsonb NOT NULL DEFAULT '{}',
 	saved_at timestamptz NOT NULL DEFAULT now()
 )`
 
@@ -73,4 +79,38 @@ func (d *DB) LoadClock(ctx context.Context, metric string) ([]byte, error) {
 		return nil, nil
 	}
 	return raw, err
+}
+
+// Settings returns an account's game settings ({} when it has none).
+func (d *DB) Settings(ctx context.Context, account string) (map[string]any, error) {
+	var raw []byte
+	err := d.pool.QueryRow(ctx, `SELECT settings FROM fg_settings WHERE account = $1`, account).Scan(&raw)
+	out := map[string]any{}
+	if errors.Is(err, pgx.ErrNoRows) {
+		return out, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// MergeSettings merges values into an account's settings (top-level keys replace) and returns the result.
+func (d *DB) MergeSettings(ctx context.Context, account string, values map[string]any) (map[string]any, error) {
+	in, err := json.Marshal(values)
+	if err != nil {
+		return nil, err
+	}
+	var raw []byte
+	err = d.pool.QueryRow(ctx, `INSERT INTO fg_settings (account, settings) VALUES ($1, $2::jsonb)
+		ON CONFLICT (account) DO UPDATE SET settings = fg_settings.settings || EXCLUDED.settings, saved_at = now()
+		RETURNING settings`, account, string(in)).Scan(&raw)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]any{}
+	return out, json.Unmarshal(raw, &out)
 }

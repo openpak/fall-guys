@@ -72,6 +72,11 @@ func (d *DB) EraseBaas(ctx context.Context, baas []string) (accounts []string, n
 		return nil, 0, err
 	}
 	n = len(accounts)
+	if len(accounts) > 0 {
+		if _, err := tx.Exec(ctx, `DELETE FROM fg_settings WHERE account = ANY($1)`, accounts); err != nil {
+			return nil, 0, err
+		}
+	}
 	var raw string
 	switch err := tx.QueryRow(ctx, `SELECT state FROM fg_session_clock WHERE metric = $1 FOR UPDATE`, SessionMetric).Scan(&raw); {
 	case errors.Is(err, pgx.ErrNoRows):
